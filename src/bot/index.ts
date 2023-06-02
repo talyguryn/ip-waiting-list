@@ -36,6 +36,7 @@ export class Bot {
       await this.bot.sendMessage(chatId, message, {
         message_thread_id: thread_id,
         parse_mode: 'Markdown',
+        disable_web_page_preview: true,
       });
     });
 
