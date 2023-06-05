@@ -32,6 +32,11 @@ export class WaitingList {
     const assignedNetworks = this.getAssignedNetworksByDate(targetDate);
     const stats = this.getStatsByDate(targetDate);
 
+    if (!assignedNetworks.length) {
+      console.log(`No assigned networks for ${targetDate.toISOString().slice(0, 10)}`);
+      return;
+    }
+
     const reportMessage = ComposeReportMessage(targetDate, assignedNetworks, stats);
 
     return reportMessage;

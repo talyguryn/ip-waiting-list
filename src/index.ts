@@ -35,6 +35,11 @@ const bot = new Bot({BOT_TOKEN, db});
   cron.schedule(CRON_SCHEDULE_SEND_REPORT, async () => {
     const message = waitingList.getReportMessageByDateOffset(-1);
 
+    if (!message) {
+      console.error('Message is empty. Skipping sending report');
+      return;
+    }
+
     /** Send message to main channel */
     try {
       const channelMessage = await bot.sendMessage(CHANNEL_ID, message, {
