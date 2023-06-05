@@ -34,7 +34,7 @@ export function ComposeReportMessage(reportDate: Date, assignedNetworks: Assigne
   message += `*${daysNumber} day${daysNumber > 1 ? 's' : ''}* that first LIR in queue has been waiting.\n`;
   message += '\n';
 
-  message += 'Daily report by [@IPv4_Waiting_List](https://t.me/IPv4_Waiting_List)';
+  message += 'Daily report by [@IPv4_Waiting_List](https://t.me/+61Qp3vl97Xw3Zjhi)';
 
   return message;
 }
