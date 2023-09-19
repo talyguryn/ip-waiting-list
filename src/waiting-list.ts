@@ -1,4 +1,4 @@
-import { Alloclist, StatsList, AssignedNetwork, StatsItem } from './types';
+import { Alloclist, StatsList, AssignedNetwork, StatsItem, TransfersAllocationsList, TransfersAssignmentsList } from './types';
 
 import { getAlloclist } from './data/alloclist/source/remote';
 import { parseAlloclist } from './data/alloclist/parse-alloclist';
@@ -6,11 +6,19 @@ import { parseAlloclist } from './data/alloclist/parse-alloclist';
 import { getStats } from './data/stats/source/remote';
 import { parseStats } from './data/stats/parse-stats';
 
+import { getTransfersAllocations } from './data/transfers-allocations/source/remote';
+import { parseTransfersAllocations } from './data/transfers-allocations/parse-transfers-allocations';
+
+import { getTransfersAssignments } from './data/transfers-assignments/source/remote';
+import { parseTransfersAssignments } from './data/transfers-assignments/parse-transfers-assignments';
+
 import { ComposeReportMessage } from './report-message/compose-report-message';
 
 export class WaitingList {
   private alloclist: Alloclist;
   private stats: StatsList;
+  private transfersAllocations: TransfersAllocationsList;
+  private transfersAssignments: TransfersAssignmentsList
 
   constructor() {}
 
@@ -23,6 +31,12 @@ export class WaitingList {
     const statsList = await getStats();
     this.stats = parseStats(statsList);
 
+    const transfersAllocations = await getTransfersAllocations();
+    this.transfersAllocations = parseTransfersAllocations(transfersAllocations);
+
+    const transfersAssignments = await getTransfersAssignments();
+    this.transfersAssignments = parseTransfersAssignments(transfersAssignments);
+
     console.log('Updates pulled');
   }
 
@@ -31,13 +45,15 @@ export class WaitingList {
 
     const assignedNetworks = this.getAssignedNetworksByDate(targetDate);
     const stats = this.getStatsByDate(targetDate);
+    const transfersAllocations = this.getTransfersAllocationsByDate(targetDate);
+    const transfersAssignments = this.getTransfersAssignmentsByDate(targetDate);
 
-    if (!assignedNetworks.length) {
+    if (!assignedNetworks.length && !transfersAllocations.length && !transfersAssignments.length) {
       console.log(`No assigned networks for ${targetDate.toISOString().slice(0, 10)}`);
       return;
     }
 
-    const reportMessage = ComposeReportMessage(targetDate, assignedNetworks, stats);
+    const reportMessage = ComposeReportMessage(targetDate, assignedNetworks, transfersAllocations, transfersAssignments, stats);
 
     return reportMessage;
   }
@@ -47,7 +63,6 @@ export class WaitingList {
 
     this.alloclist.filter(lir => lir.nets.filter(net => {
       if (net.date.getTime() === targetDate.getTime()) {
-        // console.log(`${lir.id} > ${net.subnet}`);
         nets.push({
           lir,
           net,
@@ -66,6 +81,36 @@ export class WaitingList {
     const targetStat = this.stats[targetDate.toISOString().slice(0, 10)];
 
     return targetStat;
+  }
+
+  private getTransfersAllocationsByDate(targetDate: Date): TransfersAllocationsList {
+    const targetTransfersAllocations = this.transfersAllocations.filter(item => {
+      let [day, month, year] = item.date.split('/')
+      const itemDate = new Date(`${year}-${month}-${day}`);
+
+      if (itemDate.getTime() === targetDate.getTime()) {
+        return true;
+      }
+
+      return false;
+    });
+
+    return targetTransfersAllocations;
+  }
+
+  private getTransfersAssignmentsByDate(targetDate: Date): TransfersAssignmentsList {
+    const targetTransfersAssignments = this.transfersAssignments.filter(item => {
+      let [day, month, year] = item.date.split('/')
+      const itemDate = new Date(`${year}-${month}-${day}`);
+
+      if (itemDate.getTime() === targetDate.getTime()) {
+        return true;
+      }
+
+      return false;
+    });
+
+    return targetTransfersAssignments;
   }
   
   /**
