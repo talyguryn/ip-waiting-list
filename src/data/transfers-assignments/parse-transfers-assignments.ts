@@ -4,9 +4,9 @@ export const parseTransfersAssignments = (transfersAssignments: TransfersAssignm
   console.log('Parsing transfers-assignments...');
 
   transfersAssignments = transfersAssignments.filter(transfersAssignments => {
-    if (+transfersAssignments.transferred_blocks.slice(-2) <= 19 ) {
+    // if (+transfersAssignments.transferred_blocks.slice(-2) <= 19 ) {
       return true;
-    }
+    // }
   });
 
   return transfersAssignments;

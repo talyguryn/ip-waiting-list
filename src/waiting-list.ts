@@ -1,4 +1,5 @@
-import { Alloclist, StatsList, AssignedNetwork, StatsItem, TransfersAllocationsList, TransfersAssignmentsList } from './types';
+import { Alloclist, StatsList, AssignedNetwork, StatsItem, TransfersAllocationsList, TransfersAssignmentsList, TransfersAllocationsItem } from './types';
+import { Database, DatabaseData } from './database';
 
 import { getAlloclist } from './data/alloclist/source/remote';
 import { parseAlloclist } from './data/alloclist/parse-alloclist';
@@ -13,6 +14,7 @@ import { getTransfersAssignments } from './data/transfers-assignments/source/rem
 import { parseTransfersAssignments } from './data/transfers-assignments/parse-transfers-assignments';
 
 import { ComposeReportMessage } from './report-message/compose-report-message';
+import { ComposeTechReportMessage } from './report-message/compose-tech-report-message';
 
 export class WaitingList {
   private alloclist: Alloclist;
@@ -45,8 +47,10 @@ export class WaitingList {
 
     const assignedNetworks = this.getAssignedNetworksByDate(targetDate);
     const stats = this.getStatsByDate(targetDate);
-    const transfersAllocations = this.getTransfersAllocationsByDate(targetDate);
-    const transfersAssignments = this.getTransfersAssignmentsByDate(targetDate);
+    const transfersAllocations = this.getTransfersAllocationsByDate(targetDate)
+    .filter(item => +item.transferred_blocks.slice(-2) <= 19);
+    const transfersAssignments = this.getTransfersAssignmentsByDate(targetDate)
+    .filter(item => +item.transferred_blocks.slice(-2) <= 19);
 
     if (!assignedNetworks.length && !transfersAllocations.length && !transfersAssignments.length) {
       console.log(`No assigned networks for ${targetDate.toISOString().slice(0, 10)}`);
@@ -84,7 +88,8 @@ export class WaitingList {
   }
 
   private getTransfersAllocationsByDate(targetDate: Date): TransfersAllocationsList {
-    const targetTransfersAllocations = this.transfersAllocations.filter(item => {
+    const targetTransfersAllocations = this.transfersAllocations
+    .filter(item => {
       let [day, month, year] = item.date.split('/')
       const itemDate = new Date(`${year}-${month}-${day}`);
 
@@ -99,7 +104,8 @@ export class WaitingList {
   }
 
   private getTransfersAssignmentsByDate(targetDate: Date): TransfersAssignmentsList {
-    const targetTransfersAssignments = this.transfersAssignments.filter(item => {
+    const targetTransfersAssignments = this.transfersAssignments
+    .filter(item => {
       let [day, month, year] = item.date.split('/')
       const itemDate = new Date(`${year}-${month}-${day}`);
 
@@ -127,5 +133,48 @@ export class WaitingList {
     const targetDate = new Date(utcTimestamp);
 
     return targetDate;
+  }
+
+  public async getTechReportMessageByDateOffset(offset: number = 0, dbTransfers: Database<DatabaseData<any>>): Promise<string> {
+    const targetDate = this.getDateWithOffset(offset);
+
+    const transfersAllocations = this.getTransfersAllocationsByDate(targetDate);
+    const transfersAssignments = this.getTransfersAssignmentsByDate(targetDate);
+
+    for (let i = 0; i < transfersAllocations.length; i++) {
+      const transferItem = transfersAllocations[i];
+      const isNewTransfer = await this.saveNewTransfer(transferItem, dbTransfers);
+
+      if (!isNewTransfer) {
+        transfersAllocations.splice(i, 1);
+        i--;
+      }
+    }
+
+    for (let i = 0; i < transfersAssignments.length; i++) {
+      const transferItem = transfersAssignments[i];
+      const isNewTransfer = await this.saveNewTransfer(transferItem, dbTransfers);
+
+      if (!isNewTransfer) {
+        transfersAssignments.splice(i, 1);
+        i--;
+      }
+    }
+
+    const reportMessage = ComposeTechReportMessage(transfersAllocations, transfersAssignments);
+
+    return reportMessage;
+  }
+
+  private async saveNewTransfer(transferItem: TransfersAllocationsItem | TransfersAllocationsItem, database: Database<DatabaseData<any>>): Promise<boolean> {
+    const key = JSON.stringify(transferItem);
+    const itemInDB = await database.read(key);
+
+    if (itemInDB) {
+      return false;
+    }
+
+    await database.create(key, true);
+    return true;
   }
 }

@@ -38,7 +38,7 @@ export function ComposeReportMessage(reportDate: Date, assignedNetworks: Assigne
   let transfersAssignmentsNumber = transfersAssignments.length;
 
   if (transfersAllocationsNumber || transfersAssignmentsNumber) {
-    message += `*Transfers:*\n`;
+    message += `*Huge network transfers:*\n`;
 
     transfersAllocations.forEach((transfersAllocation, index) => {
       const limit = 10;
