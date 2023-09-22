@@ -12,7 +12,7 @@ export function ComposeTechReportMessage(transfersAllocations: TransfersAllocati
   // get month in letters format
   const month = nowDate.toLocaleString('default', { month: 'short' });
 
-  const nowDateFormatted = `${nowDate.getDate()} ${month} ${nowDate.getFullYear()}, ${nowDate.getHours()}:${nowDate.getMinutes()}`;
+  const nowDateFormatted = `${nowDate.getDate()} ${month} ${nowDate.getFullYear()}, ${nowDate.getHours()}:${nowDate.getMinutes() < 10 ? 0 : '' }${nowDate.getMinutes()}`;
 
   if (transfersAllocationsNumber || transfersAssignmentsNumber) {
     message += `*Latest transfers for ${nowDateFormatted}*\n\n`;
