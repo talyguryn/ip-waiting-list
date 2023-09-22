@@ -160,6 +160,11 @@ export class WaitingList {
         i--;
       }
     }
+    
+    if (!transfersAllocations.length && !transfersAssignments.length) {
+      console.log(`No transfrerred networks for ${targetDate.toISOString().slice(0, 10)}`);
+      return;
+    }
 
     const reportMessage = ComposeTechReportMessage(transfersAllocations, transfersAssignments);
 
