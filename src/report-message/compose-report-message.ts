@@ -1,4 +1,4 @@
-import { AssignedNetwork, StatsItem, TransfersAllocationsItem, TransfersAssignmentsItem } from '../types';
+import { AssignedNetwork, LirNetworkType, StatsItem, TransfersAllocationsItem, TransfersAssignmentsItem } from '../types';
 
 export function ComposeReportMessage(reportDate: Date, assignedNetworks: AssignedNetwork[], transfersAllocations: TransfersAllocationsItem[], transfersAssignments: TransfersAssignmentsItem[], stats: StatsItem): string {
   let message: string = '';
@@ -10,8 +10,10 @@ export function ComposeReportMessage(reportDate: Date, assignedNetworks: Assigne
   message += '\n';
 
   if (numberOfAssignedNetworks) {
-    assignedNetworks.forEach((assignedNetwork, index) => {
-      const limit = 70;
+    const ipv4Nets = assignedNetworks.filter(assignedNetwork => assignedNetwork.net.type === LirNetworkType.IPv4);
+
+    ipv4Nets.forEach((assignedNetwork, index) => {
+      const limit = 50;
 
       if (index >= limit) {
         if (index === limit) {
@@ -24,7 +26,30 @@ export function ComposeReportMessage(reportDate: Date, assignedNetworks: Assigne
       message += `\`${assignedNetwork.net.subnet}\` ${assignedNetwork.lir.id}\n`;
     });
 
-    message += '\n';
+    if (ipv4Nets.length) {
+      message += '\n';
+    }
+
+
+    const ipv6Nets = assignedNetworks.filter(assignedNetwork => assignedNetwork.net.type === LirNetworkType.IPv6);
+
+    ipv6Nets.forEach((assignedNetwork, index) => {
+      const limit = 50;
+
+      if (index >= limit) {
+        if (index === limit) {
+          message += `… and ${numberOfAssignedNetworks - limit} more\n`;
+        }
+
+        return;
+      }
+
+      message += `\`${assignedNetwork.net.subnet}\` ${assignedNetwork.lir.id}\n`;
+    });
+
+    if (ipv6Nets.length) {
+      message += '\n';
+    }
   }
 
   let lirsNumber = stats.length;
