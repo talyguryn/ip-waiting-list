@@ -1,4 +1,4 @@
-FROM node:20
+FROM node:20.5.1
 
 # Set timezone
 RUN rm /etc/localtime

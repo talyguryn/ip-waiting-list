@@ -61,7 +61,7 @@ const bot = new Bot({BOT_TOKEN, db: dbChats});
   });
 
   cron.schedule(CRON_SCHEDULE_SEND_TECH_REPORT, async () => {
-    const message = await waitingList.getTechReportMessageByDateOffset(0, dbTransfers);
+    const message = await waitingList.getTechReportMessageByDateOffset(-4, dbTransfers);
 
     if (!message) {
       console.error('Tech Report message is empty. Skipping sending report');

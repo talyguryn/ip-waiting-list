@@ -1,4 +1,5 @@
 import { AssignedNetwork, LirNetworkType, StatsItem, TransfersAllocationsItem, TransfersAssignmentsItem } from '../types';
+import { escapeSpecialChars as esc } from './escape-special-chars';
 
 export function ComposeReportMessage(reportDate: Date, assignedNetworks: AssignedNetwork[], transfersAllocations: TransfersAllocationsItem[], transfersAssignments: TransfersAssignmentsItem[], stats: StatsItem): string {
   let message: string = '';
@@ -23,7 +24,7 @@ export function ComposeReportMessage(reportDate: Date, assignedNetworks: Assigne
         return;
       }
 
-      message += `\`${assignedNetwork.net.subnet}\` ${assignedNetwork.lir.id}\n`;
+      message += `\`${esc(assignedNetwork.net.subnet)}\` ${esc(assignedNetwork.lir.id)}\n`;
     });
 
     if (ipv4Nets.length) {
@@ -44,7 +45,7 @@ export function ComposeReportMessage(reportDate: Date, assignedNetworks: Assigne
         return;
       }
 
-      message += `\`${assignedNetwork.net.subnet}\` ${assignedNetwork.lir.id}\n`;
+      message += `\`${esc(assignedNetwork.net.subnet)}\` ${esc(assignedNetwork.lir.id)}\n`;
     });
 
     if (ipv6Nets.length) {
@@ -76,7 +77,7 @@ export function ComposeReportMessage(reportDate: Date, assignedNetworks: Assigne
         return;
       };
 
-      message += `PA \`${transfersAllocation.transferred_blocks}\` ${transfersAllocation.from} → ${transfersAllocation.to}\n`;
+      message += `PA \`${esc(transfersAllocation.transferred_blocks)}\` ${esc(transfersAllocation.from)} → ${esc(transfersAllocation.to)}\n`;
     });
 
     transfersAssignments.forEach((transfersAssignments, index) => {
@@ -90,10 +91,8 @@ export function ComposeReportMessage(reportDate: Date, assignedNetworks: Assigne
         return;
       };
 
-      message += `PI \`${transfersAssignments.transferred_blocks}\` ${transfersAssignments.from} → ${transfersAssignments.to}\n`;
+      message += `PI \`${esc(transfersAssignments.transferred_blocks)}\` ${esc(transfersAssignments.from)} → ${esc(transfersAssignments.to)}\n`;
     });
-
-    
 
     message += '\n';
   }
