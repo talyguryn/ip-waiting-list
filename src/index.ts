@@ -14,6 +14,7 @@ import { LowdbDatabase } from './database/lowdb';
 const CRON_SCHEDULE_PULL_UPDATES = process.env.CRON_SCHEDULE_PULL_UPDATES || '0 * * * *';
 const CRON_SCHEDULE_SEND_PUBLIC_REPORT = process.env.CRON_SCHEDULE_SEND_PUBLIC_REPORT || '0 12 * * *';
 const CRON_SCHEDULE_SEND_TECH_REPORT = process.env.CRON_SCHEDULE_SEND_TECH_REPORT || '0 12 * * *';
+const CRON_SCHEDULE_SEND_MONTHLY_STATS = process.env.CRON_SCHEDULE_SEND_MONTHLY_STATS || '0 12 1 * *';
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const CHANNEL_ID = process.env.CHANNEL_ID || '';
 const TECH_REPORTS_CHANNEL_ID = process.env.TECH_REPORTS_CHANNEL_ID || '';
@@ -68,9 +69,28 @@ const bot = new Bot({BOT_TOKEN, db: dbChats});
       return;
     }
 
-    /** Send message to main channel */
+    /** Send message to tech channel */
     try {
       await bot.sendMessage(TECH_REPORTS_CHANNEL_ID, message, {
+        parse_mode: 'Markdown',
+        disable_web_page_preview: true,
+      });
+    } catch (error) {
+      console.error('Error while sending message', error.message);
+    }
+  });
+
+  cron.schedule(CRON_SCHEDULE_SEND_MONTHLY_STATS, async () => {
+    const message = await waitingList.getMonthlyStatsMessageForMonth(-1);
+
+    if (!message) {
+      console.error('Monthly stats message is empty');
+      return;
+    }
+
+    /** Send message to main channel */
+    try {
+      await bot.sendMessage(CHANNEL_ID, message, {
         parse_mode: 'Markdown',
         disable_web_page_preview: true,
       });

@@ -15,6 +15,7 @@ import { parseTransfersAssignments } from './data/transfers-assignments/parse-tr
 
 import { ComposeReportMessage } from './report-message/compose-report-message';
 import { ComposeTechReportMessage } from './report-message/compose-tech-report-message';
+import { ComposeMonthlyStatsMessage } from './report-message/compose-monthly-stats-message';
 
 export class WaitingList {
   private alloclist: Alloclist;
@@ -48,9 +49,9 @@ export class WaitingList {
     const assignedNetworks = this.getAssignedNetworksByDate(targetDate);
     const stats = this.getStatsByDate(targetDate);
     const transfersAllocations = this.getTransfersAllocationsByDate(targetDate)
-    .filter(item => +item.transferred_blocks.slice(-2) <= 19);
+    .filter(item => +item.transferred_blocks.split('/')[1] <= 19);
     const transfersAssignments = this.getTransfersAssignmentsByDate(targetDate)
-    .filter(item => +item.transferred_blocks.slice(-2) <= 19);
+    .filter(item => +item.transferred_blocks.split('/')[1] <= 19);
 
     if (!assignedNetworks.length && !transfersAllocations.length && !transfersAssignments.length) {
       console.log(`No assigned networks for ${targetDate.toISOString().slice(0, 10)}`);
@@ -167,6 +168,51 @@ export class WaitingList {
     }
 
     const reportMessage = ComposeTechReportMessage(transfersAllocations, transfersAssignments);
+
+    return reportMessage;
+  }
+
+  public async getMonthlyStatsMessageForMonth(monthOffset: number = 0): Promise<string> {
+    // get number of month according monthOffset
+    const targetDate = new Date();
+    targetDate.setMonth(targetDate.getMonth() + monthOffset);
+
+    // from this.Alloclist get all networks with date in target month
+    const monthList = this.alloclist.filter(lir => lir.nets.filter(net => {
+      if (net.date.getMonth() === targetDate.getMonth() &&
+          net.date.getFullYear() === targetDate.getFullYear()) {
+        return true;
+      }
+
+      return false;
+    }));
+
+    // calculate total number networks counted by subnet mask
+    const stats: Record<string, number> = {};
+
+    monthList.forEach(lir => lir.nets.filter(net => {
+      if (net.date.getMonth() === targetDate.getMonth() &&
+          net.date.getFullYear() === targetDate.getFullYear()) {
+        return true;
+      }
+
+      return false;
+    }).forEach(net => {
+      const mask = net.subnet.split('/')[1];
+
+      if (!mask) {
+        console.error(`No mask for ${net.subnet}`);
+        return;
+      }
+
+      if (!stats[mask]) {
+        stats[mask] = 1;
+      }
+
+      stats[mask]++;
+    }));
+
+    const reportMessage = ComposeMonthlyStatsMessage(targetDate, stats);
 
     return reportMessage;
   }
